@@ -14,7 +14,8 @@
       "sync_mechanism": "TaxLit13PJSubmit.exe --sync-attorneys (PjTools.SyncAttorneysAsync) - MERGE upsert, never DELETEs a stale row, and already refuses to touch PICK_LIST at all if Tyler returns zero attorneys",
       "min_rows": 1,
       "baseline_rows": 16,
-      "why": "Live Tyler firm-roster cache - row count legitimately drifts as attorneys join/leave the firm, so the floor is 'never empty' (the one thing the sync code itself can't protect against: a DELETE from outside the sync path), not an exact count."
+      "max_drop_fraction_from_baseline": 0.5,
+      "why": "Live Tyler firm-roster cache - row count legitimately drifts as attorneys join/leave the firm, so the floor is 'never empty' (the one thing the sync code itself can't protect against: a DELETE from outside the sync path), not an exact count. max_drop_fraction_from_baseline is a second, heuristic floor: --sync-attorneys only ever adds/updates, never deletes, so a real roster change should look like slow drift, not a cliff - losing more than half the roster between runs is suspicious even though it isn't literally zero."
     },
     {
       "pick_name": "EfileLitExFilingCode",

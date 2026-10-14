@@ -152,10 +152,44 @@ def test_pjdocsecurity_extrainfo_schema_tags_are_uniform():
 
 
 @pytest.mark.db
-def test_efileattorney_every_row_has_a_cached_tyler_id():
-    """ExtraInfo4 ('Firm attorney list: id=...') is what ResolveAttorneyByPickValue in
-    LitFilingRunner.cs (and its PJ/Interventions equivalents) actually needs to attach a
-    filing attorney - a row with this blank resolves to nothing at submit time."""
+def test_efileattorney_every_row_has_a_parseable_cached_tyler_id():
+    """ResolveAttorneyByPickValue (LitFilingRunner.cs and its PJ/Interventions equivalents)
+    doesn't just check ExtraInfo4 is non-blank - it does
+    tylerInfo.IndexOf("id=", OrdinalIgnoreCase) and silently returns a null TylerAttorneyId
+    if that substring isn't found, exactly the 'field goes missing with no error' shape every
+    real bug in this project has had (FilerType, Multiplier, FilingAttorneyID). A non-blank
+    ExtraInfo4 that's missing 'id=' would pass a bare not-blank check and still silently fail
+    downstream, so this asserts the actual substring the real resolver depends on, not merely
+    that the column has something in it."""
     rows = db.pick_list("EfileAttorney")
-    blank = [r["PICK_VALUE"] for r in rows if not (r["ExtraInfo4"] or "").strip()]
-    assert not blank, f"EfileAttorney rows with no ExtraInfo4 (cached Tyler id): {blank}"
+    bad = [
+        r["PICK_VALUE"]
+        for r in rows
+        if "id=" not in (r["ExtraInfo4"] or "").lower()
+    ]
+    assert not bad, (
+        f"EfileAttorney rows whose ExtraInfo4 has no 'id=' substring (silently resolves to "
+        f"no TylerAttorneyId, per LitFilingRunner.cs's ResolveAttorneyByPickValue): {bad}"
+    )
+
+
+@pytest.mark.db
+def test_efileattorney_has_not_lost_most_of_its_roster_at_once():
+    """The 'never zero' floor above only catches a complete wipe. --sync-attorneys is a MERGE
+    that only ever adds/updates rows for attorneys Tyler currently returns - it never deletes,
+    so a legitimate roster change should look like slow drift (one or two names changing
+    between runs), not a cliff. A sudden large drop from the last verified-good count is a
+    distinct, more realistic failure mode than hitting exactly zero, and is otherwise
+    invisible to every other test in this file. This is a heuristic tripwire, not a precise
+    bound - a real, intentional mass roster change should move picklist_baseline.json's
+    baseline_rows (its own commit, per TESTING_RULES.md rule 2), not get this test loosened."""
+    spec = LISTS["EfileAttorney"]
+    rows = db.pick_list("EfileAttorney")
+    floor = spec["baseline_rows"] * spec["max_drop_fraction_from_baseline"]
+    assert len(rows) >= floor, (
+        f"EfileAttorney has {len(rows)} row(s), down from a last-verified-good baseline of "
+        f"{spec['baseline_rows']} - more than a "
+        f"{int((1 - spec['max_drop_fraction_from_baseline']) * 100)}% drop. --sync-attorneys "
+        f"never deletes rows, so a drop this size did not come from a normal Tyler sync - "
+        f"investigate before assuming it's organic roster drift."
+    )
