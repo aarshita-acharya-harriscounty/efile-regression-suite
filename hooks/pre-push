@@ -1,0 +1,23 @@
+#!/bin/sh
+# Interim enforcement of TESTING_RULES.md rule 10, until the self-hosted CI runner
+# (SETUP.md) is registered. Blocks a push if the suite fails. Enable with:
+#   git config core.hooksPath hooks
+echo "pre-push: running regression suite..."
+python -m pytest
+status=$?
+
+if [ $status -eq 5 ]; then
+  echo "pre-push: no tests collected yet (suite not built - see PLAN.md build order). Allowing push."
+  exit 0
+fi
+
+if [ $status -ne 0 ]; then
+  echo ""
+  echo "pre-push BLOCKED: the regression suite failed. Fix it or discuss before pushing -"
+  echo "see TESTING_RULES.md. (git push --no-verify bypasses this - don't, except by your"
+  echo "own explicit choice, never because a run was inconvenient.)"
+  exit 1
+fi
+
+echo "pre-push: all tests passed."
+exit 0

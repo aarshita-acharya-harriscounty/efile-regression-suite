@@ -86,11 +86,17 @@ were in a shared file (`FilingReviewMessageInspector.cs`) that every one of the 
 runs through. There is no such thing as a change too small to regress something else in this
 codebase. Concretely:
 
-- Every PR must run the full suite in CI before it's mergeable — not just the test file that
+- Every PR must run the full suite before it's mergeable — not just the test file that
   "obviously" covers the changed code. Partial/targeted runs are for your own local iteration
   only, never the signal that gates a merge.
-- A PR cannot be merged with a red required check, full stop — no "I'll fix it after merging,"
-  no admin override, no merging with the check still running.
+- **Current enforcement mechanism (until `SETUP.md` section 1's self-hosted runner exists):**
+  the committed `hooks/pre-push` hook, enabled via `git config core.hooksPath hooks`, runs the
+  full suite and blocks the push on failure. This is not a weaker, temporary version of the
+  rule — a push that skips it (`--no-verify`) is exactly as forbidden as merging a red CI
+  check once CI exists. Once the runner is registered, CI becomes the actual merge gate and
+  the hook becomes a second, redundant layer — not a replacement for CI, keep both.
+- A PR/push cannot go through with a known failure, full stop — no "I'll fix it after,"
+  no bypassing the hook, no merging with a check still pending.
 - This applies to changes inside the suite itself too (a fixture, a golden file, a harness
   helper) — not just to the C# source being tested. A harness bug can hide a real regression
   just as effectively as a loosened assertion can (rule 3).

@@ -19,6 +19,18 @@ pip install -r requirements.txt
 python -m pytest -v
 ```
 
+## Enable the pre-push gate (do this now — CI's runner isn't set up yet)
+
+`.github/workflows/regression.yml` has no self-hosted runner registered yet (see
+`SETUP.md`), so it won't actually execute. Until it does, this repo's own `hooks/pre-push`
+is what enforces "run the suite on every change" (`TESTING_RULES.md` rule 10) — it runs
+`pytest` before any `git push` leaves this machine and blocks the push on a real failure.
+Enable it once per clone:
+
+```
+git config core.hooksPath hooks
+```
+
 ## Layout
 
 - `harness/` — the shared wire-diff/DB/exe-invocation library (PLB-1243).

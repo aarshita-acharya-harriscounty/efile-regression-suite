@@ -1,5 +1,12 @@
 # One-time setup — self-hosted runner + branch protection
 
+**Deferred for now (2026-10-14).** Until section 1 is done, `.github/workflows/regression.yml`
+exists but has no runner to execute it — pushes and PRs will show the check as permanently
+queued, not passing or failing. That's expected, not a bug. **In the meantime, the local
+pre-push hook (see `README.md` "Enable the pre-push gate") is what actually enforces
+TESTING_RULES.md rule 10** — it runs the full suite before anything leaves this machine,
+no GitHub infra required. Do sections 1-2 below whenever ready; nothing about them is urgent.
+
 Both steps below are manual, one-time, and done from the GitHub web UI / this machine. Neither
 is something that can be scripted from here without repo-admin credentials.
 
