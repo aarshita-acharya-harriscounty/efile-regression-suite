@@ -34,7 +34,7 @@
     {
       "cause": "202582347",
       "case_serial": 1773102,
-      "court": null,
+      "court": "harris:dccv334",
       "active": true,
       "flows": ["interventions"],
       "filings": { "interventions": 38 },

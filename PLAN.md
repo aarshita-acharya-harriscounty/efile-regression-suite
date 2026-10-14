@@ -60,14 +60,17 @@ case that already carries a filed TAXLIT13 row is exactly what a subsequent-fili
 needs, with zero setup. Concretely, the pool starts from causes **already proven live** in
 past sessions rather than picking new ones blind:
 
-| Cause | CaseSerial / court | Covers | Source |
-|---|---|---|---|
-| **202310045** | `harris:dccv152` | PJ subsequent; 11-plaintiff + 9-spelling-AKA party list (stresses party grouping) | env 327932/327949, [[lawbase-efile-pj-build]] |
-| **202653957** | 1773097 / `harris:dccv270` | **All four flows** (PJ/Interventions/Lit-OP/Lit-existing), Constable + Secretary-of-State ServeBy branches, the Maria/Cynthia mangled-name regression check, has its own reset mechanism (`12_RESET_AND_ServeBy_Test.sql`, TAXLIT13 Serial 34-38) | 10/5 four-button run |
-| **202582347** | — | Interventions' "Harris County NOT yet a party" creation path (`NewParty1`/`REFERENCE`), the one path the shared-case run above did *not* exercise | env 328386/328394/328403 |
-| **671187** | — | Multi-petition CalcFee math (2 × $350 petitions = $878.68) | [[lawbase-efile-current-workflow]] |
-| 202656147 (1767556) | — | **Excluded from the active pool** — stage lost all its party data between sessions with no code change (10/5 finding 3). Keep it only as a documented cautionary entry / occasional re-probe, never relied on. |
-| TBD | — | A genuine Litigation existing-case *non-suit* example — not yet pinned to a real cause; pick one while building PLB-1247, don't guess now. |
+**Verified against LawBase_Design and Tyler stage 2026-10-14.** The live pool now lives in
+`fixtures/causes.json` — that file is authoritative; this table is the summary.
+
+| Cause | CaseSerial / court | Covers |
+|---|---|---|
+| **202653957** | 1773097 / `harris:dccv270` | **All four flows** — each has its own TAXLIT13 row (34/35/36/37). Constable + Secretary-of-State ServeBy branches (TAXLIT2A 131142/131115), the Maria/Cynthia mangled-name case, the `harris:dc` → court redirect |
+| **202310045** | 671247 / `harris:dccv152` | PJ (TAXLIT13 15) + Litigation-existing (28, env 328355). 11 plaintiffs and a defendant under 9 AKA spellings — stresses party grouping and the exact-match fee-party resolver |
+| **202582347** | 1773102 / `harris:dccv334` | Interventions' genuine first-intervention path (`NewParty1`/`REFERENCE`) — Harris County is not already a party. TAXLIT13 38, env 328403 |
+| ~~202656147~~ | 1767556 | **RETIRED.** Tyler stage lost its party data with no code change on our side (10/5 finding 3). The documented precedent that a known-good cause can rot |
+| ~~202300498~~ | 671187 | **NOT USABLE.** This was recorded in the first draft of this plan as cause "671187" — wrong twice over: 671187 is a *CaseSerial* (its cause is 202300498), and the $878.68 two-petition fee observation was made in **Sandbox**. In Design this case has no TAXLIT13 rows at all, so there is no multi-petition fee fixture yet. One has to be built before PLB-1248 can assert fee math |
+| TBD | — | A Litigation existing-case *non-suit* example — not yet pinned to a real cause; pick one while building PLB-1247, don't guess |
 
 **Fixture health check runs first, always.** `test_00_fixture_health.py` probes every
 registered cause (`--probe-causes`, `--list-case-parties`) before any flow test touches it.

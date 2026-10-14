@@ -20,7 +20,11 @@ is NOT called by the harness. ECF4 is a separate, much larger, cert-only surface
 | `TaxLit13CalcFee.exe` | `--serial` | Fee calculation (multi-petition math) |
 | `TaxLit13GetFilingDetails.exe` | `--serial` | **The official read-back tool** — this is what the wire-level layer uses to confirm Tyler actually echoes a value, not a side query |
 | `TaxLit13GetCaseList.exe` | `--serial` | Case/filing list read, used by fixture-health probing |
-| `TaxLit13SyncPartyTypes.exe` | `--location`, `--dry-run`, `--diag` | PICK_LIST party-type refresh, used by the SQL-level layer |
+
+`TaxLit13SyncPartyTypes.Net8` exists in the source tree but is **not deployed** to
+`L:\Modules\EFiling` (verified 2026-10-14), so the harness doesn't reference it. The
+`test_tool_exe_is_deployed` check would fail on it, correctly — don't add it back without
+deploying it first.
 
 `--allow-unserved`, `--search-public-list`, `--try-bar` exist on these exes too but aren't
 exercised by any of the four live flows today — leave them out unless a flow starts using one.
@@ -31,10 +35,18 @@ Found by grepping the three live submit exes directly: `TAXLIT0`, `TAXLIT13`, `T
 `TAXLIT13C`, `TAXLIT2`, `TAXLIT2A`, `TAXLIT3`, `CONTACT0`, `CONTACT3`, `CONTACT9`, `PICK_LIST`,
 `COUNTERS`, `User_Profile`.
 
-**`CallbackMessages` is referenced in the code but explicitly excluded from the harness.** It
-doesn't exist in `LawBase_Design` (confirmed, PJ build finding 1) — Accepted/Rejected can never
-arrive there. Any harness check that depends on a callback landing must be written to not run
-in Design, not loosened to "pass anyway" (see `TESTING_RULES.md` rule 3).
+**`CallbackMessages` is referenced in the code and excluded from the harness's assertions —
+but not for the reason previously recorded.** It **does now exist** in `LawBase_Design`
+(verified 2026-10-14, created by the 10/09 Design callback repoint); the earlier note that
+Design lacks it was true on 9/28 and is now stale. What's still true is that it holds **0
+rows** — no clerk callback has ever landed — so `Accepted`/`Rejected` cannot be asserted on.
+`test_callbacks_table_exists_but_is_still_empty` watches both halves of that and will fail
+the moment a real callback arrives, which is the signal to widen scope deliberately rather
+than discover it by accident.
+
+`TAXLIT13E` and `EfileUserAuthSession` genuinely are still absent from Design (verified same
+day), and `test_design_still_lacks_the_tables_the_scope_doc_excludes` re-checks that every
+run so this exclusion can't quietly go stale the way the `CallbackMessages` one did.
 
 ## Wire fields the harness asserts on
 
