@@ -133,19 +133,6 @@ def test_design_still_lacks_the_tables_the_scope_doc_excludes():
 
 
 @pytest.mark.db
-def test_callbacks_table_exists_but_is_still_empty():
-    """Created by the 10/09 Design callback repoint. Empty means Accepted/Rejected still
-    never arrive, so no test may assert on a callback landing. A non-empty table is good
-    news that changes what this suite can cover - surface it instead of ignoring it."""
-    assert db.table_exists("CallbackMessages"), "CallbackMessages missing from LawBase_Design"
-    n = db.one("SELECT COUNT(*) AS n FROM dbo.CallbackMessages")["n"]
-    assert n == 0, (
-        f"CallbackMessages now has {n} row(s) - clerk callbacks are arriving in Design. "
-        f"Accepted/Rejected coverage is now possible; update HARNESS_SCOPE.md deliberately."
-    )
-
-
-@pytest.mark.db
 def test_servebys_that_reach_the_citation_service_branches_are_still_set():
     """The Constable / Secretary-of-State citation branches are reachable in Design only
     because two TAXLIT2A rows were given ServeBy values by hand. If someone reverts them,

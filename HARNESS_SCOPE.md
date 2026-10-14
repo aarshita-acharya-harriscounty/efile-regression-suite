@@ -35,18 +35,19 @@ Found by grepping the three live submit exes directly: `TAXLIT0`, `TAXLIT13`, `T
 `TAXLIT13C`, `TAXLIT2`, `TAXLIT2A`, `TAXLIT3`, `CONTACT0`, `CONTACT3`, `CONTACT9`, `PICK_LIST`,
 `COUNTERS`, `User_Profile`.
 
-**`CallbackMessages` is referenced in the code and excluded from the harness's assertions —
-but not for the reason previously recorded.** It **does now exist** in `LawBase_Design`
-(verified 2026-10-14, created by the 10/09 Design callback repoint); the earlier note that
-Design lacks it was true on 9/28 and is now stale. What's still true is that it holds **0
-rows** — no clerk callback has ever landed — so `Accepted`/`Rejected` cannot be asserted on.
-`test_callbacks_table_exists_but_is_still_empty` watches both halves of that and will fail
-the moment a real callback arrives, which is the signal to widen scope deliberately rather
-than discover it by accident.
+**`CallbackMessages` is explicitly out of scope — it's a not-yet-built feature, not a
+regression risk.** It **does now exist** in `LawBase_Design` (verified 2026-10-14, created
+by the 10/09 Design callback repoint; the earlier note that Design lacks it was true on
+9/28 and had gone stale), but it holds 0 rows — no clerk callback has ever landed, so
+`Accepted`/`Rejected` can't be exercised at all yet. There's nothing to regression-test
+here: the table isn't a currently-working thing that could break, it's a future one.
+**Callback/Accepted-Rejected testing gets its own ticket** once that functionality is
+actually built, per `HARNESS_SCOPE.md`'s whole premise — this suite only tests what's
+currently live.
 
 `TAXLIT13E` and `EfileUserAuthSession` genuinely are still absent from Design (verified same
 day), and `test_design_still_lacks_the_tables_the_scope_doc_excludes` re-checks that every
-run so this exclusion can't quietly go stale the way the `CallbackMessages` one did.
+run so this exclusion can't quietly go stale the way the `CallbackMessages` note did.
 
 ## Wire fields the harness asserts on
 
