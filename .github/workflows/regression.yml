@@ -1,0 +1,28 @@
+name: regression-suite
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+jobs:
+  regression-suite:
+    # Must run on a machine that can actually reach SVTUSLAWBASESQL and Tyler stage -
+    # GitHub-hosted cloud runners cannot. See SETUP.md for runner registration.
+    runs-on: self-hosted
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: python -m pip install -r requirements.txt
+
+      - name: Run full regression suite
+        run: python -m pytest -v --junitxml=junit.xml
+
+      - name: Publish test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: junit-results
+          path: junit.xml
