@@ -1,0 +1,65 @@
+{
+  "_comment": [
+    "The curated real-cause pool. Every value here was read out of LawBase_Design on",
+    "2026-10-14, not carried over from notes. See TESTING_RULES.md rules 1, 2 and 5",
+    "before editing: a cause that stops working is re-picked and recorded, never quietly",
+    "swapped, and 'last_verified' is only moved forward by an actual passing health run."
+  ],
+  "pool": [
+    {
+      "cause": "202653957",
+      "case_serial": 1773097,
+      "court": "harris:dccv270",
+      "active": true,
+      "flows": ["pj", "interventions", "litigation_op", "litigation_existing"],
+      "filings": {
+        "pj": 34,
+        "interventions": 35,
+        "litigation_op": 36,
+        "litigation_existing": 37
+      },
+      "why": "Richest fixture: all four flows have their own TAXLIT13 row on this one case, it carries the Constable + TxSecretaryState ServeBy values on TAXLIT2A 131142/131115 (the only rows in Design that reach those citation-service branches), and its two person defendants are the Maria/Cynthia Willis pair that the defendant name-split rule was derived from. Exercises the harris:dc -> harris:dccv270 court redirect.",
+      "last_verified": "2026-10-14"
+    },
+    {
+      "cause": "202310045",
+      "case_serial": 671247,
+      "court": "harris:dccv152",
+      "active": true,
+      "flows": ["pj", "litigation_existing"],
+      "filings": { "pj": 15, "litigation_existing": 28 },
+      "why": "PJ's original known-good cause. 11 plaintiffs (4 Plaintiff + 7 Intervenor Plaintiff) and a defendant re-cited under 9 AKA spelling variants, so it stresses party grouping and the exact-match 'HARRIS COUNTY' fee-party resolver far harder than a simple case does.",
+      "last_verified": "2026-10-14"
+    },
+    {
+      "cause": "202582347",
+      "case_serial": 1773102,
+      "court": null,
+      "active": true,
+      "flows": ["interventions"],
+      "filings": { "interventions": 38 },
+      "why": "The only pool case where Harris County is genuinely NOT already a party, so it is the one that exercises Interventions' real first-intervention path (NewParty1 + REFERENCE, Tyler minting a new party id) instead of re-declaring an existing party.",
+      "last_verified": "2026-10-14"
+    },
+    {
+      "cause": "202656147",
+      "case_serial": 1767556,
+      "court": null,
+      "active": false,
+      "flows": [],
+      "filings": {},
+      "why": "RETIRED - do not reactivate without re-probing. Filed fine on 2026-10-01 (envelopes 328161/328162/328163), then Tyler stage lost its party data with no code change on our side: GetCase returns 'Error creating a reader for the MTOM message' and no CASEPARTYID at all. Kept here as the documented precedent that a known-good cause can rot.",
+      "last_verified": "2026-10-05"
+    },
+    {
+      "cause": "202300498",
+      "case_serial": 671187,
+      "court": null,
+      "active": false,
+      "flows": [],
+      "filings": {},
+      "why": "NOT USABLE AS-IS. Recorded in the plan as the multi-petition fee fixture ($878.68 / two $350 petitions), but that observation was made in LawBase_Sandbox - in Design this case has no TAXLIT13 rows at all. A multi-petition fee fixture still needs to be built in Design before PLB-1248 can assert on fee math; this entry exists so the gap is not silently forgotten.",
+      "last_verified": "2026-10-14"
+    }
+  ]
+}
