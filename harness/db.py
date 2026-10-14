@@ -68,6 +68,37 @@ def pick_list(pick_name):
     )
 
 
+def distinct_pick_name_prefixes(like):
+    """Distinct PICK_NAME values matching `like`, truncated at the first '|'. Several
+    cert-era lists (Filing Code, Party Type, ...) use a pipe-delimited composite PICK_NAME -
+    see lawbase-efile-current-workflow.md's PICK_LIST conventions table - so this collapses
+    those back to their list name the same way a human scanning PICK_NAME would. The three
+    Design-era lists this suite cares about are plain (no '|'), so for them this is just
+    PICK_NAME itself; detecting a '|' creeping onto one of them is drift worth flagging."""
+    rows = query(
+        """SELECT DISTINCT
+                  LEFT(PICK_NAME, CASE WHEN CHARINDEX('|', PICK_NAME) = 0
+                                        THEN LEN(PICK_NAME) ELSE CHARINDEX('|', PICK_NAME) - 1 END) AS prefix
+             FROM dbo.PICK_LIST WHERE PICK_NAME LIKE ?""",
+        (like,),
+    )
+    return {r["prefix"] for r in rows}
+
+
+def pick_list_primary_key_columns():
+    rows = query(
+        """SELECT c.name AS col
+             FROM sys.key_constraints kc
+             JOIN sys.index_columns ic
+               ON ic.object_id = kc.parent_object_id AND ic.index_id = kc.unique_index_id
+             JOIN sys.columns c
+               ON c.object_id = ic.object_id AND c.column_id = ic.column_id
+            WHERE kc.parent_object_id = OBJECT_ID('dbo.PICK_LIST')
+            ORDER BY ic.key_ordinal"""
+    )
+    return [r["col"] for r in rows]
+
+
 def table_exists(name):
     return (
         one(

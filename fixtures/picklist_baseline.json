@@ -1,0 +1,43 @@
+{
+  "_comment": [
+    "PLB-1248. Verified directly against LawBase_Design's PICK_LIST on 2026-10-14 - these are",
+    "the only 3 'Efile%' picklist names that exist there today (Sandbox/the ECF4 cert-era",
+    "build has ~20; Design's simplified rebuild only ever seeded these three - see",
+    "HARNESS_SCOPE.md). TESTING_RULES.md rules 1-2 apply: a floor here only moves on real",
+    "evidence (a user-confirmed re-seed, a Tyler-side attorney-roster change), its own commit,",
+    "never bundled with a code fix."
+  ],
+  "picklists": [
+    {
+      "pick_name": "EfileAttorney",
+      "maintained_by": "tyler_sync",
+      "sync_mechanism": "TaxLit13PJSubmit.exe --sync-attorneys (PjTools.SyncAttorneysAsync) - MERGE upsert, never DELETEs a stale row, and already refuses to touch PICK_LIST at all if Tyler returns zero attorneys",
+      "min_rows": 1,
+      "baseline_rows": 16,
+      "why": "Live Tyler firm-roster cache - row count legitimately drifts as attorneys join/leave the firm, so the floor is 'never empty' (the one thing the sync code itself can't protect against: a DELETE from outside the sync path), not an exact count."
+    },
+    {
+      "pick_name": "EfileLitExFilingCode",
+      "maintained_by": "hand",
+      "sync_mechanism": "none found - grepped every live exe in I:\\E_file_local\\BatchFiling\\_tyler_net4_extract; LitFilingRunner.cs only ever SELECTs this list, nothing INSERTs/DELETEs it",
+      "min_rows": 22,
+      "baseline_rows": 22,
+      "why": "No live code repopulates this list. If it is ever emptied (bulk edit, a future cleanup script, a bad migration), nothing will self-heal it - every Litigation existing-case judgment/dismissal/non-suit filing loses its FilingCode choice silently. Exact floor, not a 'never empty' floor."
+    },
+    {
+      "pick_name": "EfilePJDocSecurity",
+      "maintained_by": "hand",
+      "sync_mechanism": "none found - same grep as above, zero write references anywhere in the live exes",
+      "min_rows": 99,
+      "baseline_rows": 99,
+      "why": "Same reasoning as EfileLitExFilingCode: hand-seeded, no refresh path, so a drop is permanent until a human notices. Every row also carries the literal pair ExtraInfo1='TylerDocumentTypeName'/ExtraInfo2='EfileLocationPk' (self-describing column-role tags, not per-row data) - verified uniform across all 99 rows 2026-10-14."
+    }
+  ],
+  "pick_value_column_width": 65,
+  "pick_value_width_warn_margin": 5,
+  "known_blank_extrainfo2_fee_codes": {
+    "pick_name": "EfileLitExFilingCode",
+    "codes": ["Motion to Transfer", "Notice of Appeal"],
+    "why": "Pre-existing as of 2026-10-14, not introduced by this ticket. Recorded explicitly so a THIRD code going blank is caught as a regression, and so either of these two getting a fee value is noticed rather than silently accepted."
+  }
+}
