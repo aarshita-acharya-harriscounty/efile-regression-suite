@@ -87,16 +87,39 @@ def test_no_duplicate_pick_value_within_list(pick_name):
     assert not dupes, f"PICK_LIST('{pick_name}') has duplicate PICK_VALUE rows: {dupes}"
 
 
+PICK_VALUE_MARGIN_CASES = [
+    pytest.param(
+        "EfileLitExFilingCode",
+        marks=pytest.mark.xfail(
+            reason=(
+                "PLB-1248: real Tyler filing code 'Counter Claim/Cross Action/Interpleader/"
+                "Intervention/Third Party' is already 64 of 65 chars - accepted as a known "
+                "gap 2026-10-14 (user sign-off) rather than widening PICK_LIST.PICK_VALUE in "
+                "Design. gen_picklist_sql.ps1 (Desktop\\Efile\\Litigation) now skips-and-warns "
+                "on any FUTURE value that actually exceeds 65, mirroring PjTools.cs's "
+                "EfileAttorney guard, so this can no longer get worse silently - but today's "
+                "64 is unchanged by that guard, which is why this still needs to stay xfail "
+                "rather than passing for a wrong reason. Revisit if the column is ever widened."
+            ),
+            strict=True,
+        ),
+    ),
+    "EfilePJDocSecurity",
+    "EfileAttorney",
+]
+
+
 @pytest.mark.db
-@pytest.mark.parametrize("pick_name", LIST_NAMES)
+@pytest.mark.parametrize("pick_name", PICK_VALUE_MARGIN_CASES)
 def test_pick_value_has_safety_margin_before_the_column_truncates_it(pick_name):
     """PICK_VALUE is varchar(65) in Design. PjTools.SyncAttorneysAsync already codes
     defensively against this for EfileAttorney (skips and logs any attorney name over 65
-    chars rather than letting SQL truncate it silently into a dead, unmatchable row) - but
-    EfileLitExFilingCode and EfilePJDocSecurity have no such guard, so this test is their
-    only protection. Warn well before the actual limit, not just at it: a value sitting at
-    64/65 today is one slightly-longer Tyler description away from a silent truncation that
-    produces a PICK_VALUE nothing else can ever exact-match again."""
+    chars rather than letting SQL truncate it silently into a dead, unmatchable row), and
+    gen_picklist_sql.ps1 now does the same for EfileLitExFilingCode - but neither guard
+    changes a value that's already close today, which is what this test actually measures.
+    Warn well before the actual limit, not just at it: a value sitting at 64/65 today is one
+    slightly-longer Tyler description away from a silent truncation that produces a
+    PICK_VALUE nothing else can ever exact-match again."""
     width = db.column_width("PICK_LIST", "PICK_VALUE")
     margin = BASELINE["pick_value_width_warn_margin"]
     rows = db.pick_list(pick_name)
