@@ -65,6 +65,10 @@ FLOWS = {
     ),
 }
 
+# PJ's read-only query tools dump into their OWN folder, unlike the submit path, which writes
+# its outbound envelope into ECF4's (see Flow.shared_dump above).
+PJ_TOOL_DUMP_DIR = _LOCALAPPDATA / "TaxLit13PJSubmit"
+
 TOOLS = {
     "calcfee": EFILING_ROOT / "TaxLit13CalcFee.exe",
     "filing_details": EFILING_ROOT / "TaxLit13GetFilingDetails.exe",

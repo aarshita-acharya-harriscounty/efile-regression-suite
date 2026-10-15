@@ -4,11 +4,36 @@ Namespace-agnostic local-name matching throughout. Never match wire XML with str
 regex searching - a self-closing element reads as present-but-empty and has already
 produced confidently wrong conclusions on this project.
 """
+import re
+
 from lxml import etree
+
+_DECL_RE = re.compile(r"^\s*<\?xml[^>]*\?>")
 
 
 def load(path):
     return etree.parse(str(path))
+
+
+def load_dotnet_dump(path):
+    """Parses a dump written by .NET's XmlTextWriter-over-StringWriter, whose declaration is
+    a lie.
+
+    `PjTools.FilingDetailsAsync` serializes into a `StringWriter` - which is UTF-16 in .NET,
+    so the writer emits `<?xml version="1.0" encoding="utf-16"?>` - and then persists the
+    resulting string with `File.WriteAllText`, i.e. as UTF-8. The file therefore claims
+    UTF-16 while holding UTF-8 bytes, and a conforming parser refuses it outright:
+    "Document labelled UTF-16 but has UTF-8 content".
+
+    This is a real (if diagnostic-only) defect in the exe, not something to paper over
+    silently: the dump it advertises as the record of what Tyler returned cannot be opened by
+    any standard XML tool. Handled here rather than worked around at the call site so there is
+    one documented place to delete once the exe writes an honest declaration.
+    """
+    text = path.read_text(encoding="utf-8-sig")
+    # Drop the lying declaration and re-encode honestly.
+    text = _DECL_RE.sub("", text, count=1).lstrip()
+    return etree.fromstring(text.encode("utf-8")).getroottree()
 
 
 def _all(doc, name):
@@ -67,10 +92,34 @@ def optional_services(doc):
     return out
 
 
+def service_contacts(doc):
+    """The envelope's e-service recipients (PLB-1169 / PLB-1244).
+
+    Each `ElectronicServiceInformation` block carries only a SERVICECONTACTID - no name and no
+    email. That is the point: the envelope-level serve list and the case-level attachment are
+    two independent layers, and the envelope identifies people purely by Tyler contact id.
+    Mapping an id back to a person needs the GetServiceInformationHistory read-back
+    (harness/service_history.py), not this envelope.
+    """
+    out = []
+    for el in _all(doc, "ElectronicServiceInformation"):
+        for ident in el:
+            if etree.QName(ident).localname != "ServiceRecipientID":
+                continue
+            out.append(
+                {
+                    "id": _child_text(ident, "IdentificationID"),
+                    "category": _child_text(ident, "IdentificationCategoryText"),
+                }
+            )
+    return out
+
+
 def extract(doc):
     """Every field in HARNESS_SCOPE.md's wire list, plus the context needed to read them."""
     tracking = _text(doc, "CaseTrackingID")
     return {
+        "service_contacts": service_contacts(doc),
         "filer_type": _text(doc, "FilerTypeText"),
         "filing_attorney": filing_attorney(doc),
         "filing_action": _text(doc, "FilingAction"),

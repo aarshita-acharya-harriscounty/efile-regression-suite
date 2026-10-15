@@ -21,3 +21,18 @@ otherwise let a real regression pass silently.
 Do not "update" these files to post-fix values. If you want golden known-good values, they
 belong in a separate per-flow golden file captured from a verified-good envelope, with the
 evidence recorded per `TESTING_RULES.md` rule 2.
+
+## Post-fix captures
+
+`pj_postfix_20261006.xml` is a different kind of file from the five above: it is a
+**known-good** PJ envelope, captured after the three 2026-10-05 fixes and after PLB-1169's
+e-service work landed, and it is the golden capture `tests/test_pj.py` diffs against
+(`fixtures/golden/pj_subsequent.json` records the provenance and the evidence for every value).
+
+Keeping both generations of PJ envelope is deliberate:
+`test_the_prefix_capture_still_shows_the_bug_this_one_fixed` asserts that `pj_328380.xml` still
+carries `CASEPARTYATTORNEYID` while this one carries `IDENTIFICATION`. A post-fix golden is only
+worth having if the suite can demonstrably tell it apart from a pre-fix envelope.
+
+It contains no email addresses — the envelope identifies service recipients purely by Tyler
+contact GUID — so unlike the service-history fixtures it needed no redaction.

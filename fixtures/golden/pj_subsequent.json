@@ -1,0 +1,191 @@
+{
+  "_comment": [
+    "PLB-1244 golden values for the PJ subsequent-filing flow, on fixture cause 202653957",
+    "(CaseSerial 1773097, TAXLIT13 Serial 34).",
+    "",
+    "SOURCE OF THESE VALUES (TESTING_RULES.md rules 1 and 2): every entry below was read out",
+    "of fixtures/wire-samples/pj_postfix_20261006.xml - a real outbound ReviewFiling envelope",
+    "captured from the deployed TaxLit13PJSubmit.exe - and then independently corroborated:",
+    "",
+    "  filer_type 54323          the resolved 'Government Filer' code. 40467 is the",
+    "                            'Not Applicable' hardcode that shipped on every subsequent",
+    "                            filing until 2026-10-01.",
+    "  filing_attorney           id 22b3f700-... is confirmed independently of the capture by",
+    "                            PICK_LIST('EfileAttorney') where PICK_VALUE='Susan Fuertes',",
+    "                            whose ExtraInfo4 reads 'Firm attorney list: id=22b3f700-...'.",
+    "                            PjConstants.FilingAttorneyName is 'Susan Fuertes', and the",
+    "                            user confirmed 2026-10-05 that Susan is correct for PJ.",
+    "                            Category IDENTIFICATION is the POST-FIX pairing: Tyler echoes",
+    "                            the field back only for this pairing and silently discarded it",
+    "                            for the pre-fix CASEPARTYATTORNEYID pairing.",
+    "  filing_code 136718        'No Fee Documents' (plural - a near-miss fails code",
+    "                            resolution), PjConstants.FilingCodeName.",
+    "  filing_description        PjConstants.FilingDescription, verbatim. Deliberately NOT",
+    "                            TAXLIT13.FilingDescription, which on Serial 34 currently reads",
+    "                            '4BTN test - PJ excess proceeds packet'.",
+    "  document_file_control_id  PjConstants.ClientRefPrefix ('99999902', EIGHT digits) + '-' +",
+    "                            the cause. ECF4's seven-digit '9999902-' is a separate open",
+    "                            question and is not what this flow sends.",
+    "  file_descriptions         per-file BinaryDescriptionText = each document's file name,",
+    "                            which is what the clerk sees next to the attachment.",
+    "  filing_party_ids          Harris County's OWN CASEPARTYID on this case - the exact-match",
+    "                            fee-party resolver, not 'the first party', which on a tax suit",
+    "                            is usually the original petitioning taxing entity.",
+    "  payment_amount 0.00       the 'waiver' payment account.",
+    "  case_category/case_type   null on a subsequent filing: they are new-case-only fields.",
+    "  person_names []           PJ declares no parties at all on a subsequent filing.",
+    "  optional_services []      PJ requests none today. Kept as an explicit empty list so that",
+    "                            PJ gaining one is a visible change, since a service sent with",
+    "                            no Multiplier is ErrorCode 129.",
+    "",
+    "'wire' is fed to harness.wire.compare, which treats it as an ALLOWLIST - adding a key",
+    "tightens this test and can never loosen it."
+  ],
+  "flow": "pj",
+  "cause": "202653957",
+  "case_serial": 1773097,
+  "filing_serial": 34,
+  "capture": "wire-samples/pj_postfix_20261006.xml",
+  "capture_evidence": [
+    "Captured from %LOCALAPPDATA%\\TaxLit13EfileSubmit\\last-reviewfiling-outbound.xml,",
+    "mtime 2026-10-06 14:03 local. Identified as PJ (not ECF4, which shares that folder - see",
+    "config.Flow.shared_dump) by four independent markers that are all PJ constants: filing",
+    "code 136718, DocumentFileControlID '99999902-202653957', the filing description, and PJ's",
+    "own 7-document packet.",
+    "",
+    "It is POST-FIX: FilerTypeText is the resolved 54323 and FilingAttorneyID carries",
+    "IDENTIFICATION, so it postdates both the 2026-10-01 FilerType fix and the 2026-10-05",
+    "attorney-category fix. It also carries the PLB-1169 e-service block, so it postdates that.",
+    "",
+    "NOT CLAIMED: the envelope number. TAXLIT13 Serial 34 currently holds EnvelopeNum 328529,",
+    "and the attach/read-back calls Tyler logged at 14:04 and 14:05 bracket this capture's",
+    "14:03 mtime, so 328529 is very probably this envelope - but the ReviewFiling RESPONSE was",
+    "not saved, so that is timestamp correlation, not a recorded fact. The file is named by",
+    "date rather than by envelope so nothing downstream treats the inference as evidence."
+  ],
+  "wire": {
+    "filer_type": "54323",
+    "filing_attorney": {
+      "id": "22b3f700-10c7-4558-af58-d74419c47e65",
+      "category": "IDENTIFICATION"
+    },
+    "filing_action": "EFileAndServe",
+    "filing_party_ids": ["c2650326-99ce-442a-839f-f3d569b20d45"],
+    "document_file_control_id": "99999902-202653957",
+    "filing_description": "Harris County's Petition for Withdrawal of Excess Proceeds",
+    "filing_code": "136718",
+    "file_descriptions": [
+      "Motion for Withdrawal of Excess Proceeds",
+      "Proposed Order",
+      "Master and Chancery Report",
+      "Notice of Hearing",
+      "Harris County Exhibit A official receipt",
+      "Harris County Exhibit B delinquent tax statement",
+      "Harris County Exhibit C notice of excess proceeds"
+    ],
+    "attachment_count": 7,
+    "optional_services": [],
+    "person_names": [],
+    "case_tracking_id": "0ebc7976-18c4-4722-928b-66b8a87f1f25",
+    "payment_amount": "0.00",
+    "case_category": null,
+    "case_type": null,
+    "is_subsequent": true
+  },
+  "service": {
+    "_comment": [
+      "The e-service half of PLB-1244. Each required contact below is derivable from today's",
+      "LawBase_Design COS data for CaseSerial 1773097 by PjCosServiceContacts' own rule, and",
+      "its Tyler id is confirmed by the GetServiceInformationHistory capture in",
+      "../service-history/pj_202653957_20261006.xml. That is why these three are asserted and",
+      "the capture's fourth contact is not - see unexplained_in_capture below."
+    ],
+    "history_capture": "service-history/pj_202653957_20261006.xml",
+    "case_tracking_id": "0ebc7976-18c4-4722-928b-66b8a87f1f25",
+    "required_contacts": [
+      {
+        "service_contact_id": "6dd420f2-ad8f-4161-9deb-be50553f47bc",
+        "name": "Angelica Hernandez",
+        "email": "angelica.hernandez@lgbs.com",
+        "cos_taxlit2_serial": 101851,
+        "source": "attorney of record",
+        "why": "THE load-bearing case for this ticket. The COS row is the FIRM Linebarger Goggan Blair & Sampson, LLP, whose own CONTACT0 email is houlitigation@lgbs.com - but TAXLIT2.AttyofRec ('100037^496') points at Contact9 Serial 496, the individual attorney Angelica Hernandez, and it is HER address that must be served. A regression that read the firm row instead would still produce a valid-looking lgbs.com address, ErrorCode 0 and a clean DB write, which is exactly why this is pinned to the exact id and the exact address."
+      },
+      {
+        "service_contact_id": "2a3b8c23-a6a3-4ece-9e94-d994cddd6d76",
+        "name": "Perdue, Brandon, Fielder, Collins & Mott, L.L.P.",
+        "email": "PBFCM-Houston@pbfcm.com",
+        "cos_taxlit2_serial": 101852,
+        "source": "firm email, no attorney of record",
+        "why": "The contrast that makes the Hernandez assertion meaningful: this COS row has an EMPTY AttyofRec, so there is no Contact9 person to prefer and the firm's own address is correctly what gets served. The two rows together prove the resolver is choosing, not defaulting."
+      },
+      {
+        "service_contact_id": "5774db27-b5b7-4282-9c66-7a1bca3a79e2",
+        "name": "Cynthia Willis",
+        "email": null,
+        "cos_taxlit2_serial": 101850,
+        "source": "party's own email",
+        "why": "A pro-se defendant - no attorney of record, ServeCert 'Email', served at her own CONTACT0 address. Her email is deliberately NOT pinned here: it is stand-in test data (a personal address someone put on the Design row so this branch could be exercised at all) and will legitimately change. The regression signal that matters is that a party with no attorney is still e-served from her own contact row, so this entry asserts the id and the source, not the address. Note this is also the row that used to trip the 'NEEDS PUBLIC LIST' block - it no longer does, which is why that block is now asserted ABSENT on this case."
+      }
+    ],
+    "must_not_be_eserved": [
+      {
+        "name": "Maria Conception Willis All Unknown Heirs, Successors Or Assigns",
+        "cos_taxlit2_serial": 101849,
+        "method": "USPS Regular",
+        "why": "On the COS but mail-only. She must appear in the review screen's mail list and must NOT receive a service contact in the envelope. 'ServeCert contains Email' is the rule; hers says USPS Regular only."
+      }
+    ],
+    "unexplained_in_capture": {
+      "service_contact_id": "feab9c68-a31c-4988-937f-94ebd3d01e7f",
+      "name": "Khurram Khwaja",
+      "email": "Khurram.Khwaja@lgbs.com",
+      "why": [
+        "OPEN QUESTION, deliberately not asserted either way (TESTING_RULES.md rules 1 and 8).",
+        "This contact is in the captured envelope's serve list, but Khwaja is NOT derivable from",
+        "CaseSerial 1773097's COS: Contact9 Serial 19912 is not referenced by any TAXLIT2 row on",
+        "that case, at any CertofService value. He IS on cause 202017727's COS (Contact9 19912 via",
+        "TAXLIT2 102600), a different case.",
+        "",
+        "The history capture shows his only action on this case is an Attach at 2026-10-06",
+        "19:04:11Z - one minute AFTER this envelope was built - so he was not attached at case",
+        "level when the envelope was assembled either. Whether a hand-run --attach-service-contact",
+        "during the 10/06 session put him in scope, or Design data has changed since, is not",
+        "something the surviving artifacts settle.",
+        "",
+        "Because the envelope's contact set therefore cannot be fully explained from current data,",
+        "the tests assert that the three required contacts are PRESENT and that the mail-only",
+        "party is ABSENT, plus structural properties of the whole list - but never an exact",
+        "count or an exact set. Pinning '== 4' would be pinning a value nobody can justify."
+      ]
+    }
+  },
+  "db_writeback": {
+    "_comment": "PLAN.md's third assertion layer. Read from LawBase_Design 2026-10-15.",
+    "filing_team": "PJ",
+    "filing_status": "Sent",
+    "client_ref_num": "99999902-202653957",
+    "document_count": 7,
+    "envelope_num_at_capture": 328529,
+    "envelope_num_latest_send": 329145,
+    "latest_send_filing_id": "0f2b6e00-4037-497f-b9e2-2a275147d649",
+    "envelope_note": [
+      "EnvelopeNum is asserted as 'present and numeric', never equal to a literal - every new",
+      "live send legitimately replaces it. Both values are recorded only so a human can tell",
+      "which send the row currently reflects.",
+      "",
+      "328529 was the value before 2026-10-15 and is the one timestamp-correlated to the wire",
+      "capture (see capture_evidence). 329145 is a RECORDED FACT rather than an inference: the",
+      "submit wrote it back to TAXLIT13A.TylerResponse verbatim as",
+      "{\"ENVELOPEID\":\"329145\",\"FILINGID\":\"0f2b6e00-4037-497f-b9e2-2a275147d649\",\"Status\":\"Submitted\"}",
+      "on all 7 document rows.",
+      "",
+      "That 329145 send was the first execution of test_live_submit_matches_golden_and_writes_back,",
+      "and it PASSED - ErrorCode 0, the live envelope matched every field in 'wire' above, and the",
+      "write-back landed. So all three of PLAN.md's assertion layers are now proven for PJ against a",
+      "freshly sent envelope, not only against the committed capture. It was run unintentionally",
+      "(`pytest -m tyler` replaces the default marker filter instead of narrowing it, so it selected",
+      "the @submits test too); the result stands on its own either way."
+    ]
+  }
+}

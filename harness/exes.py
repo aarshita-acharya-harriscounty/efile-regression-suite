@@ -124,6 +124,126 @@ def capture_wire(flow_key, dest_dir, label=None):
     return dest
 
 
+@dataclass
+class ReportedContact:
+    """One row of `--service-contacts` output, as the operator sees it."""
+
+    attached: bool
+    name: str
+    firm: str = None
+    email: str = None
+    contact_id: str = None
+    last_action: str = None
+
+
+# Matches PjTools.ServiceContactsAsync's own formatting:
+#   [ATTACHED] Angelica Hernandez  (hcao)
+#              angelica.hernandez@lgbs.com
+#              id=6dd420f2-...  last=Attach 2026-10-05 19:32:11Z
+_CONTACT_HEAD_RE = re.compile(r"^\[(ATTACHED|detached)\]\s+(.*?)(?:\s{2}\((.*)\))?$")
+_CONTACT_ID_RE = re.compile(r"^id=(\S+)\s+last=(\S+)")
+
+
+def parse_service_contacts(output):
+    """Parses `--service-contacts <cause>`; read-only, submits nothing, attaches nothing."""
+    contacts = []
+    current = None
+    for line in output.splitlines():
+        s = line.strip()
+        head = _CONTACT_HEAD_RE.match(s)
+        if head:
+            current = ReportedContact(
+                attached=head.group(1) == "ATTACHED",
+                name=head.group(2).strip(),
+                firm=(head.group(3) or "").strip() or None,
+            )
+            contacts.append(current)
+            continue
+        if current is None:
+            continue
+        ident = _CONTACT_ID_RE.match(s)
+        if ident:
+            current.contact_id = ident.group(1)
+            current.last_action = ident.group(2)
+        elif "@" in s and current.email is None:
+            current.email = s
+    return contacts
+
+
+@dataclass
+class PreviewSummary:
+    """The confirmation screen `--preview-summary` prints, parsed.
+
+    This is the real submit code path stopping one step short of sending, so what it shows is
+    what a live send would have shown - but note it runs AFTER service-contact registration,
+    so it is not purely read-only against Tyler. See the warning in HARNESS_SCOPE.md."""
+
+    rows: dict = field(default_factory=dict)
+    eserve: list = field(default_factory=list)
+    mail_only: list = field(default_factory=list)
+    unserved: list = field(default_factory=list)
+
+    def row(self, key):
+        return self.rows.get(key.lower())
+
+
+_ROW_RE = re.compile(r"^([A-Za-z][A-Za-z ./-]*?):\s{1,}(.*)$")
+_METHOD_RE = re.compile(r"^(.*?)\s{2}\((.*)\)$")
+
+
+def parse_preview_summary(output):
+    """Parses PjConfirmDialog.RenderText's layout: `  Key:<pad>value` rows, then the
+    SERVICE (FROM THE CERTIFICATE OF SERVICE) section's three sub-lists."""
+    summary = PreviewSummary()
+    section = None
+    pending = None
+    for raw in output.splitlines():
+        s = raw.strip()
+        upper = s.upper()
+        if upper.startswith("SERVICE (FROM THE CERTIFICATE OF SERVICE"):
+            section = "service"
+            continue
+        # Section() underlines each heading with 76 dashes. That rule is not a heading and
+        # must not close the section it just opened.
+        if s and not s.strip("-"):
+            continue
+        if s and raw[:1] != " " and s == upper and ":" not in s and any(c.isalpha() for c in s):
+            # Any other all-caps Section() heading closes the service section.
+            section = None
+        if s.startswith("Served by mail"):
+            section = "mail"
+            continue
+        if s.startswith("*** CANNOT BE SERVED"):
+            section = "unserved"
+            continue
+        if s.startswith("***"):
+            continue
+
+        row = _ROW_RE.match(s)
+        if row and not s.startswith("e-serve"):
+            summary.rows[row.group(1).strip().lower()] = row.group(2).strip()
+            continue
+
+        if section == "service":
+            if s.startswith("e-serve"):
+                pending = {"name": s[len("e-serve"):].strip(), "email": None,
+                           "for": None, "source": None}
+                summary.eserve.append(pending)
+            elif pending is not None:
+                if s.startswith("for:"):
+                    pending["for"] = s[4:].strip()
+                elif s.startswith("source:"):
+                    pending["source"] = s[7:].strip()
+                elif "@" in s and pending["email"] is None:
+                    pending["email"] = s
+        elif section in ("mail", "unserved"):
+            m = _METHOD_RE.match(s)
+            if m:
+                entry = {"name": m.group(1).strip(), "method": m.group(2).strip()}
+                (summary.mail_only if section == "mail" else summary.unserved).append(entry)
+    return summary
+
+
 ENVELOPE_RE = re.compile(r"envelope\D{0,12}(\d{5,8})", re.IGNORECASE)
 ERRORCODE_RE = re.compile(r"ErrorCode\D{0,4}(-?\d+)", re.IGNORECASE)
 

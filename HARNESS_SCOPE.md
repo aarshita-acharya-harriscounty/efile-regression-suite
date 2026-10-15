@@ -29,6 +29,35 @@ deploying it first.
 `--allow-unserved`, `--search-public-list`, `--try-bar` exist on these exes too but aren't
 exercised by any of the four live flows today — leave them out unless a flow starts using one.
 
+### Three corrections found while building PLB-1244 (2026-10-15)
+
+**1. `--preview-summary` is NOT read-only against Tyler.** It was listed above with the other
+query flags, which is misleading. `PartyServiceContactRegistrar.EnsureRegisteredAsync` runs at
+`PjFilingRunner.cs:410` and the `PreviewSummaryOnly` return is at line 864 — the *same method*,
+so registration always happens first. Any COS party not already registered is **created** in
+Tyler's firm service-contact list by a preview run. It still never submits an envelope. The
+suite therefore marks preview tests `tyler_write` and **deselects them by default**, because
+`TESTING_RULES.md` rule 10 makes every default-selected test run on every push, and "every push
+may create Tyler contacts" is not acceptable.
+
+**2. `GetFilingDetails` by `ENVELOPEID` returns no filing fields at all** — just an
+envelope-level summary (status, court, submitter). No `FilingAttorneyID`, no `FilingPartyID`.
+So an attorney/party echo can only be read back by **`FILINGID`**, which is
+`TAXLIT13A.TylerTrakingID` (also written verbatim into `TylerResponse` as JSON). This is a trap
+worth naming: querying by the wrong category yields exactly the same empty field that the
+2026-10-05 mismatched-pair *bug* yielded, so the two are indistinguishable from an assertion's
+point of view. Confirmed 2026-10-15 — queried by FILINGID, Tyler echoes the filing attorney
+back correctly, so the 10/05 fix is still in force.
+
+**3. `--filing-details` writes a dump whose XML declaration is a lie.**
+`PjTools.FilingDetailsAsync` serializes through a `StringWriter` (UTF-16 in .NET, so
+`XmlTextWriter` emits `encoding="utf-16"`) and then persists it with `File.WriteAllText`, i.e.
+as UTF-8. Any conforming parser refuses the file outright: *"Document labelled UTF-16 but has
+UTF-8 content"*. Diagnostic-only — nothing on the wire is affected — but the artifact the exe
+advertises as the record of Tyler's response cannot be opened by standard XML tooling.
+`harness/wire.py::load_dotnet_dump` works around it in one documented place; delete that helper
+once the exe writes an honest declaration.
+
 ## Tables the harness is allowed to query
 
 Found by grepping the three live submit exes directly: `TAXLIT0`, `TAXLIT13`, `TAXLIT13A`,
